@@ -38,4 +38,7 @@
     <Project Path="src/Services.Order/HybridShop.Services.Order.Core/HybridShop.Services.Order.Core.csproj" />
     <Project Path="src/Services.Order/HybridShop.Services.Order.Infrastructure/HybridShop.Services.Order.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HybridShop.Services.Auth.Tests/HybridShop.Services.Auth.Tests.csproj" />
+  </Folder>
 </Solution>
