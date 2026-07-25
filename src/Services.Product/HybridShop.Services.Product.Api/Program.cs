@@ -1,7 +1,9 @@
+using HybridShop.BuildingBlocks.EventBus;
 using HybridShop.BuildingBlocks.OpenApi;
 using HybridShop.BuildingBlocks.OpenApi.Auth;
 using HybridShop.Services.Product.Api.GraphQL;
 using HybridShop.Services.Product.Application;
+using HybridShop.Services.Product.Application.Consumers;
 using HybridShop.Services.Product.Infrastructure;
 using HybridShop.Services.Product.Infrastructure.Grpc;
 
@@ -25,6 +27,11 @@ builder.Services.AddAuthServices(builder.Configuration);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddEventBus(builder.Configuration, x =>
+{
+    x.AddConsumer<OrderCreatedConsumer>();
+});
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

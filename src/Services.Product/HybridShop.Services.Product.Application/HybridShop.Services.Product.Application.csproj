@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HybridShop.Services.Product.Core\HybridShop.Services.Product.Core.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.csproj" />
   </ItemGroup>
 
   <ItemGroup>

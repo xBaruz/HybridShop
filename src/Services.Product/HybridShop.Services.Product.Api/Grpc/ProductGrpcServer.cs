@@ -64,14 +64,7 @@ public class ProductGrpcServerService : ProductGrpcService.ProductGrpcServiceBas
 
             bool hasVariants = product.Variants is not null && product.Variants.Any();
 
-            if (hasVariants && !item.SkuId.HasValue)
-            {
-                throw new RpcException(new Status(
-                    StatusCode.InvalidArgument, 
-                    $"Product '{item.ProductId}' has variants. You must provide a valid SkuId."));
-            }
-
-            Guid? finalSkuId = item.SkuId;
+            Guid? finalSkuId = null;
             double finalPrice = (double)product.Price.Value;
             int finalQuantity = product.Quantity.Value;
 
@@ -86,12 +79,9 @@ public class ProductGrpcServerService : ProductGrpcService.ProductGrpcServiceBas
                         $"SKU '{item.SkuId.Value}' does not belong to Product '{item.ProductId}'."));
                 }
 
+                finalSkuId = item.SkuId.Value;
                 finalPrice = (double)matchingVariant.Price.Value;
                 finalQuantity = matchingVariant.Quantity.Value;
-            }
-            else if (!hasVariants && item.SkuId.HasValue)
-            {
-                finalSkuId = null;
             }
 
             var model = new ProductGrpcModel

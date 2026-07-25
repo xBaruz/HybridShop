@@ -157,5 +157,23 @@ public class Product
         IsDeleted = true;
         UpdatedAt = DateTime.UtcNow;   
     }
+
+    public void DecreaseQuantity(int amount, Guid? skuId = null)
+    {
+        if (skuId.HasValue && skuId != Guid.Empty)
+        {
+            var variant = Variants.FirstOrDefault(v => v.SkuId == skuId.Value);
+            if (variant is not null)
+            {
+                var newVarVal = Math.Max(0, variant.Quantity.Value - amount);
+                variant.UpdateQuantity(newVarVal); 
+            }
+        }
+        
+        var newVal = Math.Max(0, Quantity.Value - amount);
+        Quantity = new Quantity(newVal);
+
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
 
