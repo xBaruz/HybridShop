@@ -107,7 +107,7 @@ public class AuthService
 
     public async Task LogoutAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        var user = await _userRepository.GetWithTokensByIdAsync(userId, cancellationToken);
 
         if (user is null) 
             throw new UserNotFoundException();

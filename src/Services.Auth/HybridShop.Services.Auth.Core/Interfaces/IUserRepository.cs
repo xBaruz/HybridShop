@@ -6,6 +6,7 @@ using HybridShop.Services.Auth.Core.Models;
 
 public interface IUserRepository
 {
+    Task<User?> GetWithTokensByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<UserDto?> GetDtoByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<AdminUserDto?> GetAdminDtoByIdAsync(Guid id, CancellationToken cancellationToken = default);

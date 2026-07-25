@@ -55,6 +55,13 @@ public class UserRepository : IUserRepository
         _dbContext = dbContext;
     }
 
+    public async Task<User?> GetWithTokensByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Users
+            .Include(u => u.RefreshTokens)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Users
