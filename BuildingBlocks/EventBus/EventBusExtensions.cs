@@ -13,6 +13,7 @@ public static class EventBusExtensions
     {
         services.AddMassTransit(x =>
         {
+            x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter(includeNamespace: true));            
             configureConsumers?.Invoke(x);
 
             x.UsingRabbitMq((context, cfg) =>

@@ -6,6 +6,8 @@ using HybridShop.Services.Order.Core.Interfaces;
 using HybridShop.Services.Order.Core.Models.Order;
 using HybridShop.Services.Order.Core.Models.Outbox;
 
+using EventOrderItemDto = HybridShop.BuildingBlocks.EventBus.Events;
+
 namespace HybridShop.Services.Order.Application.Services;
 
 public class OrderService
@@ -51,13 +53,23 @@ public class OrderService
 
         var productsDict = fetchedProducts
             .Where(p => p.ProductId != Guid.Empty)
-            .GroupBy(p => p.ProductId)
+            .GroupBy(p => (p.ProductId, p.SkuId))
             .ToDictionary(g => g.Key, g => g.First());
 
         foreach (var item in cart.Items)
         {
-            if (!productsDict.ContainsKey(item.ProductId))
-                throw new ProductNotFoundException(item.ProductId);
+            if (!productsDict.TryGetValue((item.ProductId, item.SkuId), out var product))
+            {
+                if (!productsDict.TryGetValue((item.ProductId, null), out product))
+                {
+                    throw new ProductNotFoundException(item.ProductId);
+                }
+            }
+
+            if (item.Quantity.Value > product.Quantity)
+            {
+                throw new InsufficientStockException(product.Quantity, item.Quantity.Value);
+            }
         }
 
         var finalCheckCart = await _cartRepository.GetCartAsync(userId, cancellationToken);
@@ -68,7 +80,10 @@ public class OrderService
 
         var groupedItems = cart.Items.GroupBy(i =>
         {
-            var product = productsDict[i.ProductId];
+            if (!productsDict.TryGetValue((i.ProductId, i.SkuId), out var product))
+            {
+                product = productsDict[(i.ProductId, null)];
+            }
             return product.SellerId != Guid.Empty ? product.SellerId : i.SellerId;
         });
 
@@ -78,13 +93,18 @@ public class OrderService
         {
             var sellerItems = group.Select(i =>
             {
-                var product = productsDict[i.ProductId];
+                if (!productsDict.TryGetValue((i.ProductId, i.SkuId), out var product))
+                {
+                    product = productsDict[(i.ProductId, null)];
+                }
+
                 return OrderItem.AddOrderItem(
                     i.ProductId,
                     product.Title,
                     i.Quantity.Value,
                     product.Price,
-                    group.Key
+                    group.Key,
+                    i.SkuId
                 );
             }).ToList();
 
@@ -108,12 +128,21 @@ public class OrderService
                 await _orderRepository.AddAsync(order, cancellationToken);
 
                 var sellerId = order.Items.First().SellerId;
+
+                var itemsDto = order.Items.Select(item => new EventOrderItemDto.OrderItemDto(
+                    item.ProductId,
+                    item.SkuId,
+                    item.Quantity,
+                    item.Price
+                )).ToList();
+
                 var @event = new OrderCreatedEvent(
                     order.Id,
                     order.BuyerId,
                     sellerId,
                     buyerEmail,
-                    order.Total
+                    order.Total,
+                    itemsDto
                 );
 
                 var outboxMessage = new OutboxMessage(
@@ -162,8 +191,8 @@ public class OrderService
 
         var isSeller = item.SellerId == currentUserId;
         var isBuyerCancelling = order.BuyerId == currentUserId 
-                             && item.Status == OrderStatus.Placed 
-                             && status == OrderStatus.Cancelled;
+                               && item.Status == OrderStatus.Placed 
+                               && status == OrderStatus.Cancelled;
 
         if (!isSeller && !isBuyerCancelling)
             throw new UnauthorizedException();
@@ -198,16 +227,17 @@ public class OrderService
             ShippingAddress = order.ShippingAddress,
             Status = order.Status.ToString(),
             CreatedAt = order.CreatedAt,
-            Items = order.Items?.Select(i => new OrderItemDto
+            Items = order.Items?.Select(i => new HybridShop.Services.Order.Application.Dto.OrderItemDto
             {
                 Id = i.Id,
                 ProductId = i.ProductId,
+                SkuId = i.SkuId,
                 Title = i.Title,
                 Quantity = i.Quantity,
                 Price = i.Price,
                 SellerId = i.SellerId,
                 Status = i.Status.ToString()
-            }).ToList() ?? new List<OrderItemDto>()
+            }).ToList() ?? new List<HybridShop.Services.Order.Application.Dto.OrderItemDto>()
         };
     }
 }

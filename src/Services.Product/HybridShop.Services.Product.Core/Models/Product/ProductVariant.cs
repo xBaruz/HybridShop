@@ -40,4 +40,6 @@ public class ProductVariant
     {
         Images.Remove(imageUrl);
     }
+
+    public void UpdateQuantity(int value) => Quantity = new Quantity(value);
 }

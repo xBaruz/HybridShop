@@ -57,7 +57,8 @@ public class OutboxProcessor : BackgroundService
                             var eventMessage = JsonSerializer.Deserialize(message.Content, type);
                             if (eventMessage is not null)
                             {
-                                await publishEndpoint.Publish(eventMessage, type, stoppingToken);
+                                await publishEndpoint.PublishGeneric(eventMessage, type, stoppingToken);
+
                                 message.MarkAsProcessed();
                                 _logger.LogInformation("Outbox pomyślnie wysłał zdarzenie {Type} [ID: {Id}]", message.Type, message.Id);
                             }

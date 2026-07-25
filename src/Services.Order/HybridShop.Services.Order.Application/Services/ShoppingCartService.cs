@@ -33,7 +33,6 @@ public class ShoppingCartService
             return new ShoppingCartDto { UserId = userId, CartVersion = newCart.Version };
         }
 
-
         if (!cart.Items.Any())
         {
             return new ShoppingCartDto 
@@ -74,7 +73,6 @@ public class ShoppingCartService
                 ? product.SellerId 
                 : i.SellerId;
 
-
             itemsSubtotal += price * i.Quantity.Value;
 
             itemsDto.Add(new CartItemDto
@@ -90,7 +88,6 @@ public class ShoppingCartService
 
         var deliveryCost = cart.Delivery?.Price ?? 0m;
         decimal total = itemsSubtotal + deliveryCost;
-
 
         return new ShoppingCartDto
         {
@@ -113,6 +110,15 @@ public class ShoppingCartService
             throw new ProductNotFoundException(dto.ProductId);
 
         var cart = await _repository.GetCartAsync(userId, cancellationToken) ?? ShoppingCart.NewShoppingCart(userId);
+
+        var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == dto.ProductId && i.SkuId == product.SkuId);
+        int currentQuantityInCart = existingItem?.Quantity.Value ?? 0;
+        int totalRequestedQuantity = currentQuantityInCart + dto.Quantity;
+
+        if (totalRequestedQuantity > product.Quantity)
+        {
+            throw new InsufficientStockException(totalRequestedQuantity, product.Quantity);
+        }
         
         cart.AddItem(
             product.ProductId,
